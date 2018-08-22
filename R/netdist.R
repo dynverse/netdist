@@ -1,8 +1,10 @@
-netdist <- function(x, ...) UseMethod("netdist")
 
-## Method netdist for matrix
-netdist.matrix <- function(x, h=NULL, d="HIM", ga=NULL, components=TRUE, ...){
-
+#' netdist between two 
+#' 
+#' 
+#' @export
+netdist <- netdist.matrix <- function(x, h=NULL, d="HIM", ga=NULL, components=TRUE, ...){
+  
   if (is.null(h))
     stop("Need to provide a second matrix to compute the distance")
   
@@ -56,7 +58,7 @@ netdist.matrix <- function(x, h=NULL, d="HIM", ga=NULL, components=TRUE, ...){
       # warning("components parameter will be ignored", call. = FALSE)
     }
   }
-
+  
   ##check on ga passing through ipsen function
   if(is.null(ga)){
     if(d==2){
@@ -101,158 +103,10 @@ netdist.matrix <- function(x, h=NULL, d="HIM", ga=NULL, components=TRUE, ...){
   if (myadj$d=="H"){
     dd <- hamming(myadj)
   }
-
+  
   ## Return distance list
   return(dd)
 }
-
-## Register S3 method for object Matrix
-netdist.Matrix <- netdist.matrix
-
-## Register S4 methods for matrix, Matrix and data.frame objects
-setMethod("netdist","matrix", netdist.matrix)
-setMethod("netdist","Matrix", netdist.matrix)
-setMethod("netdist","data.frame", netdist.matrix)
-
-
-## Register S3 and S4 methods for igraph objects is igraph is available
-netdist.igraph <- netdist.matrix
-setMethod("netdist","igraph",netdist.matrix)
-
-
-## Method netdist for list of adjacency matrices
-##--------------------------------------------------
-## Implementation for kernel distance
-## Output a distance matrix
-netdist.list <- function(x, d="HIM", ga=NULL, components=TRUE, ...){
-  DISTANCE <- c("HIM","IM","H",
-                "ipsen","Ipsen","IpsenMikhailov","Ipsen-Mikhailov",
-                "hamming","Hamming")
-  d <- pmatch(d, DISTANCE)
-  if(d==2L | (d>=4  & d<=7L))
-    d <- 2L
-  if(d==3L |(d>=8L & d<=9L))
-    d <- 3L
-
-  ## Check distance type
-  if(is.na(d))
-    stop("invalid distance", call. =FALSE)
-  if(d == -1)
-    stop("ambiguous distance", call. =FALSE)
-
-  ## Store the function call
-  Call <- match.call()
-  id.Call <- match( names(Call),c("x", "d", "ga","components", "n.cores", "verbose", "rho"), nomatch=0)
-
-  ## add a check so that an unexisting parameter cannot be passed
-  if(sum(id.Call[-1]==0)==1){
-    warning("For netdist function the parameter '",names(Call)[which(id.Call==0)[2]],"' will be ignored",call.=FALSE)
-  }
-  if(sum(id.Call[-1]==0)>1){
-    msg <- "The following parameters will be ignored:\n"
-    for(i in which(id.Call==0)[-1]){
-      msg <- paste(msg,"'",names(Call)[i],"'\n",sep="")
-    }
-    warning(msg,call.=FALSE)
-  }
-  
-  ##check if need to return all components
-  if(is.null(components)){
-    if(d==1){
-      comp <- TRUE
-    } else {
-      comp <- FALSE
-    }
-  } else {
-    comp <- components
-    if(d==1){
-      if(!is.logical(comp))
-        stop("components must be TRUE or FALSE")
-    } else {
-      comp <- FALSE
-      warning("components parameter will be ignored", call. = FALSE)
-    }
-  }
-  
-  ##check on ga pass through ipsen function
-  if(is.null(ga)){
-    if(d==2){
-      warning("The ga parameter will be automatically defined.", call.=FALSE)
-    }
-  }else{
-    if(!is.numeric(ga) && !is.null(ga))
-      stop("ga must be numeric",call.=FALSE)
-  }
-
-
-  ## Distance computation
-  ##------------------------------
-  ## Create the class
-  tmp <- lapply(x, g2adj)
-  if (d == 1L | d == 2L)
-    laplist <- list()
-  
-  adjlist <- list()
-  N <- tmp[[1]]$N
-  tag <- tmp[[1]]$tag
-
-  ## Create a list of adjacency matrices
-  for (i in 1:length(tmp)){
-    g <- tmp[[i]]
-    if (g$N == N && g$tag == tag){
-        if (d == 1L | d == 2L)
-          laplist[[i]] <- Lap(g$adj)
-        adjlist[[i]] <- g$adj
-    } else {
-      stop(paste("Element",i,"not of the same length!"), call.=FALSE)
-    }
-    myadj <- list(d=DISTANCE[d],G=adjlist,N=N,tag=tag)
-  }
-  
-  ## Compute the distance
-
-  ## HIM
-  if (myadj$d=="HIM"){
-    mylap <- list(L=laplist,N=N, tag=tag)
-    dd <- him(list(ADJ=myadj,LAP=mylap), ga=ga,  components=comp, ltag=TRUE, ...)
-  }
-
-  ## IM
-  if (myadj$d=="IM"){
-    mylap <- list(L=laplist,N=N, tag=tag)
-    dd <- ipsen(mylap,ga=ga, ...)
-    dd <- list(IM=dd)
-  }
-
-  ## H
-  if (myadj$d=="H"){
-    dd <- hamming(myadj)
-    dd <- list(H=dd)
-  }
-  
-  ## Give names to the matrices
-  if (!is.null(names(x))){
-    ## Create a list from the matrix
-    if (is.list(dd)){
-      dd <- lapply(dd,function(y,x){colnames(y) <- rownames(y) <- names(x)
-                                    return(y)}, x=x)
-    } else {
-      colnames(dd) <- rownames(dd) <- names(x)
-      dd <- list(HIM=dd)
-    }
-  } else {
-    ## Return names in the list if HIM with no components has been set
-    if (is.matrix(dd) && d==1L){
-      dd <- list(HIM=dd)
-    } 
-  }
-  
-  ## Return a distance matrix
-  return(dd)
-}
-
-## Register S4 method for lists
-setMethod("netdist", "list", netdist.list)
 
 
 ## Prepare the matrix for computing distance if the graph is directed
@@ -269,7 +123,7 @@ transfmat <- function(x){
   ## If the graph is directed create a new matrix 
   if (!isSymmetric(x,check.attributes=FALSE, check.names=FALSE)){
     zero <- matrix(0, nrow=n, ncol=n)
-    tmp <- Matrix::rBind(Matrix::cBind(zero,t(Adj)),Matrix::cBind(Adj,zero))
+    tmp <- rbind(cbind(zero,t(Adj)),cbind(Adj,zero))
     Adj <- tmp
     tag <- "dir"
     n <- ncol(tmp)
@@ -286,21 +140,6 @@ transfmat <- function(x){
 ## Create the adjacency matrix structure
 ##----------------------------------------
 g2adj <- function(x,...) UseMethod("g2adj")
-
-g2adj.igraph <- function(x,...,type="both"){
-  if (!is.null(get.edge.attribute(x,"weight"))){
-    WW <- "weight"
-  } else {
-    warning("No weight attribute to the graph object\nCompute binary adjacency matrix", call.=FALSE)
-    WW <- NULL
-  }
-  Adj <- get.adjacency(x,type=type,attr=WW,sparse=TRUE)
-  diag(Adj) <- 0
-  ll <- transfmat(Adj)
-
-  return(ll)
-}
-setMethod("g2adj","igraph",g2adj.igraph)
 
 g2adj.matrix <- function(x,...){
   ll <- transfmat(x)

@@ -1,6 +1,6 @@
-Package: nettools
+Package: netdist
 Type: Package
-Title: A Network Comparison Framework
+Title: Comparison of networks based on nettools
 Version: 1.1.0
 Date: 2017-11-06
 Authors@R: c(person("Michele","Filosi",role=c("aut","cre"), email = "filosi@fbk.eu"),
@@ -11,7 +11,8 @@ Authors@R: c(person("Michele","Filosi",role=c("aut","cre"), email = "filosi@fbk.
 Maintainer: Michele Filosi <filosi@fbk.eu>
 Depends: R (>= 2.14.1), methods
 LinkingTo: Rcpp
-Imports: parallel, Rcpp, rootSolve, dtw, WGCNA, minet, Matrix, minerva, combinat, igraph, c3net, bc3net, R.utils
+Imports: Rcpp, Matrix
 Description: A collection of network inference methods for co-expression networks, quantitative network distances and a novel framework for network stability analysis.
 License: CC BY-NC-SA 4.0 
 Author: Michele Filosi [aut, cre], Roberto Visintainer [aut], Samantha Riccadonna [aut], Giuseppe Jurman [ctb], Cesare Furlanello [ctb]
+RoxygenNote: 6.1.0
