@@ -25,76 +25,23 @@ ipsen <- function(object, ga=NULL, ...){
   if (!is.na(match("verbose", names(list(...)))))
     verbose <- list(...)[["verbose"]]
   
-  ## Should I use multiple cores or not?
-  if(detectCores() >= 2 && (is.null(n.cores) || n.cores>1)){
-    if (is.null(n.cores) || n.cores >= detectCores()){
-      if (length(laplist) < detectCores()){
-        n.cores <- length(laplist)
-      } else {
-        n.cores <- detectCores() - 1
-      }
-    }
-    cl <- makeCluster(n.cores)
-    
-    ## Eval needed function on nodes
-    clusterEvalQ(cl,{K <- function(mygamma,given_omega){
-      return(1/integrate(lorentz,lower=0,upper=Inf,mygamma=mygamma,given_omega=given_omega, stop.on.error = FALSE)$value)
-    }
-                     rho <- function(omega, mygamma, ll){
-                       ll[[2]]*lorentz(omega,mygamma,ll[[1]])
-                     }
-                     lorentz <- function(omega,mygamma,given_omega){
-                       l <-0
-                       for(i in 2:length(given_omega)){
-                         l = l + mygamma/( (omega-given_omega[i])**2+mygamma**2)                          }
-                       return(l)
-                     }
-                     spec <- function(mm){
-                       sort(eigen(mm)$values)
-                     }
-                   })
-    
+  ## Computation on 1 CPU
+  ll <- lapply(1:length(laplist),function(x,mygamma,laplist, ...){
     if (verbose)
-      cat("Start computing eigenvalues with multiple cores\n")
-    ## Actual computation of eigen-values/vectors
-    ll <- clusterApply(cl,laplist,function(x,mygamma=optgamma,...){
-      myomega <- sqrt(abs(round(spec(x),5)))
-      myk <- K(mygamma,myomega)
-      return(list(myomega,myk))
-    })
-
-    # stopCluster(cl)
-    
-  } else {
-    ## Computation on 1 CPU
-    ll <- lapply(1:length(laplist),function(x,mygamma,laplist, ...){
-      if (verbose)
-        cat("Done",x,"/",length(laplist),"\n")
-      aa <- laplist[[x]]
-      myomega <- sqrt(abs(round(spec(aa),5)))
-      myk <- K(mygamma,myomega)
-      return(list(myomega,myk))
-    }, mygamma=optgamma, laplist=laplist, ...)
-  }
-  if (exists("cl") & nrow(showConnections()) > 0){
-    clusterEvalQ(cl,{
-      mydistfun <- function(a,b, optgamma){
-        integrand <- function(omega, mygamma, given_omega_G, given_omega_H){
-          (rho(omega, optgamma,a)-rho(omega,optgamma,b))**2
-        }
-        tmp <- sqrt(integrate(integrand,lower=0,upper=Inf,mygamma=optgamma,given_omega_G=a[[1]],given_omega_H=b[[1]], stop.on.error=FALSE,rel.tol=.Machine$double.eps,subdivisions=1e4)$value)
-        return(tmp)
-      }
-    })
-  } else {
-      mydistfun <- function(a,b, optgamma){
-        integrand <- function(omega, mygamma, given_omega_G, given_omega_H){
-          (rho(omega, optgamma,a)-rho(omega,optgamma,b))**2
-        }
-        tmp <- sqrt(integrate(integrand,lower=0,upper=Inf,mygamma=optgamma,given_omega_G=a[[1]],given_omega_H=b[[1]], stop.on.error=FALSE,rel.tol=.Machine$double.eps,subdivisions=1e4)$value)
-        return(tmp)
-      }
+      cat("Done",x,"/",length(laplist),"\n")
+    aa <- laplist[[x]]
+    myomega <- sqrt(abs(round(spec(aa),5)))
+    myk <- K(mygamma,myomega)
+    return(list(myomega,myk))
+  }, mygamma=optgamma, laplist=laplist, ...)
+  
+  mydistfun <- function(a,b, optgamma){
+    integrand <- function(omega, mygamma, given_omega_G, given_omega_H){
+      (rho(omega, optgamma,a)-rho(omega,optgamma,b))**2
     }
+    tmp <- sqrt(integrate(integrand,lower=0,upper=Inf,mygamma=optgamma,given_omega_G=a[[1]],given_omega_H=b[[1]], stop.on.error=FALSE,rel.tol=.Machine$double.eps,subdivisions=1e4)$value)
+    return(tmp)
+  }
   
   if (verbose)
     cat("Start computing mutual distances\n")

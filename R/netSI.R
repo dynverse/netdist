@@ -103,29 +103,8 @@ netSI <- function(x,indicator="all", d='HIM', adj.method='cor',
   ## n.cores <- eval(Call$n.cores)
   
   ## Check availability of cores, otherwise set a default
-  if(is.null(n.cores)){
-    if(detectCores()>=2){
-      n.cores <- detectCores()-1
-      cl <- makeCluster(n.cores)
-      warning("The computation has been automatically parallelized", call.=FALSE)
-    } else {
-      cl <- NULL
-    }
-  } else {
-    if (n.cores==1){
-      cl <- NULL
-    } else {
-      if (n.cores<detectCores()){
-        cl <- makeCluster(n.cores)
-      } else {
-        if(detectCores()>=2){
-          n.cores <- detectCores()-1
-          cl <- makeCluster(n.cores)
-          warning("The computation has been automatically parallelized", call.=FALSE)
-        } 
-      }
-    }
-  }
+  n.cores <- 1
+  cl <- makeCluster(n.cores)
   
   ## Get the dimension of the input matrix
   ddim <- nrow(x)
