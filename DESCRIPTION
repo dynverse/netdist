@@ -19,5 +19,5 @@ Imports:
 URL: https://github.com/dynverse/netdist
 BugReports: https://github.com/dynverse/netdist/issues
 Description: A collection of network inference methods for co-expression networks, quantitative network distances and a novel framework for network stability analysis.
-License: MIT + LICENSE file
+License: CC BY-NC-SA 4.0
 RoxygenNote: 6.1.0
